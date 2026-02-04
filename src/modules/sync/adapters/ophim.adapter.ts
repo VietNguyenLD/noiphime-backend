@@ -10,7 +10,9 @@ export class OphimPayloadAdapter implements PayloadAdapter {
   normalize(payload: any, sourceItem: SourceItemRow): MovieNormalized {
     const title = payload?.movie?.name || sourceItem.title || 'Unknown Title';
     const originalTitle = payload?.movie?.origin_name || null;
-    const otherTitles = payload?.movie?.aliases || [];
+    const otherTitles = this.toStringArray(
+      payload?.movie?.aliases ?? payload?.movie?.alias ?? payload?.movie?.other_titles,
+    );
 
     const type = payload?.movie?.type === 'series' ? 'series' : 'single';
     const status = this.mapStatus(payload?.movie?.status);
@@ -38,6 +40,22 @@ export class OphimPayloadAdapter implements PayloadAdapter {
       },
       seasons: this.normalizeSeasons(payload),
     };
+  }
+
+  private toStringArray(input: unknown): string[] {
+    if (Array.isArray(input)) {
+      return input.map((item) => String(item || '').trim()).filter(Boolean);
+    }
+    if (typeof input === 'string') {
+      const value = input.trim();
+      return value ? [value] : [];
+    }
+    if (input && typeof input === 'object') {
+      return Object.values(input as Record<string, unknown>)
+        .map((item) => String(item || '').trim())
+        .filter(Boolean);
+    }
+    return [];
   }
 
   private mapStatus(status: string | undefined | null): MovieStatus {

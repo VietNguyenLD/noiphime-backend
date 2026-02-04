@@ -101,7 +101,7 @@ export class SyncService {
       slugSuggested: primary.slugSuggested,
       title: primary.title,
       originalTitle: primary.originalTitle || null,
-      otherTitles: [...(primary.otherTitles || [])],
+      otherTitles: [...this.toStringArray(primary.otherTitles)],
       type: primary.type,
       year: primary.year || null,
       status: primary.status || 'unknown',
@@ -135,7 +135,7 @@ export class SyncService {
       if (!merged.tmdbId && candidate.tmdbId) merged.tmdbId = candidate.tmdbId;
       if (merged.type !== 'series' && candidate.type === 'series') merged.type = 'series';
 
-      merged.otherTitles = this.unionStrings(merged.otherTitles || [], candidate.otherTitles || []);
+      merged.otherTitles = this.unionStrings(merged.otherTitles || [], this.toStringArray(candidate.otherTitles));
       merged.genres = this.unionTaxonomies(merged.genres, candidate.genres || []);
       merged.countries = this.unionTaxonomies(merged.countries, candidate.countries || []);
       merged.tags = this.unionTaxonomies(merged.tags, candidate.tags || []);
@@ -178,6 +178,22 @@ export class SyncService {
       if (!map.has(key)) map.set(key, value);
     }
     return Array.from(map.values());
+  }
+
+  private toStringArray(value: unknown): string[] {
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item || '').trim()).filter(Boolean);
+    }
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      return trimmed ? [trimmed] : [];
+    }
+    if (value && typeof value === 'object') {
+      return Object.values(value as Record<string, unknown>)
+        .map((item) => String(item || '').trim())
+        .filter(Boolean);
+    }
+    return [];
   }
 
   private unionTaxonomies(base: TaxonomyItem[], extra: TaxonomyItem[]) {

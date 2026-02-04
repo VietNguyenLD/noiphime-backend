@@ -98,11 +98,19 @@ BEGIN
   SELECT
     m.title,
     m.original_title,
-    -- other_titles là JSON array: ["Tên khác 1", "Tên khác 2", ...]
-    (
-      SELECT string_agg(value::text, ' ')
-      FROM jsonb_array_elements_text(m.other_titles) AS value
-    ) AS aliases_text,
+    -- other_titles có thể bị lưu sai kiểu (array/object/string), nên normalize khi đọc
+    CASE jsonb_typeof(m.other_titles)
+      WHEN 'array' THEN (
+        SELECT string_agg(value::text, ' ')
+        FROM jsonb_array_elements_text(m.other_titles) AS value
+      )
+      WHEN 'object' THEN (
+        SELECT string_agg(value, ' ')
+        FROM jsonb_each_text(m.other_titles)
+      )
+      WHEN 'string' THEN trim(both '"' from m.other_titles::text)
+      ELSE ''
+    END AS aliases_text,
     m.plot
   INTO v_title, v_original, v_aliases, v_plot
   FROM movies m
