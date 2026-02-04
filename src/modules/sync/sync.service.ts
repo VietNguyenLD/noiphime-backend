@@ -8,6 +8,7 @@ import {
   MovieNormalized,
   PersonItem,
   SourceItemRow,
+  StreamItem,
   TaxonomyItem,
 } from './dto/normalized.dto';
 import { normalizeTitle, sha256, slugify } from './utils/normalize';
@@ -45,9 +46,11 @@ export class SyncService {
       const { movieId, matchedBy } = await this.upsertMovie(queryRunner, normalized);
 
       await this.upsertMovieSourceMap(queryRunner, movieId, sourceItemId, matchedBy);
-      await this.syncTaxonomies(queryRunner, movieId, normalized);
-      await this.syncPeople(queryRunner, movieId, normalized);
-      await this.syncSeasonsAndEpisodes(queryRunner, movieId, normalized);
+      const mergedNormalized = await this.buildMergedNormalized(queryRunner, movieId);
+      await this.updateMovie(queryRunner, movieId, mergedNormalized);
+      await this.syncTaxonomies(queryRunner, movieId, mergedNormalized);
+      await this.syncPeople(queryRunner, movieId, mergedNormalized);
+      await this.syncSeasonsAndEpisodes(queryRunner, movieId, mergedNormalized);
 
       await queryRunner.query('UPDATE movies SET updated_at = NOW() WHERE id = $1', [movieId]);
 
@@ -62,6 +65,198 @@ export class SyncService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  private async buildMergedNormalized(queryRunner: QueryRunner, movieId: number): Promise<MovieNormalized> {
+    const rows = await queryRunner.query(
+      `
+      SELECT si.*, s.code AS source_code
+      FROM movie_source_map msm
+      JOIN source_items si ON si.id = msm.source_item_id
+      JOIN sources s ON s.id = si.source_id
+      WHERE msm.movie_id = $1
+        AND si.crawl_status = 'ok'
+        AND si.payload IS NOT NULL
+      `,
+      [movieId],
+    );
+
+    const candidates: MovieNormalized[] = [];
+    for (const row of rows as SourceItemRow[]) {
+      const sourceItem = row as SourceItemRow;
+      if (!sourceItem.payload || !Object.keys(sourceItem.payload).length) continue;
+      const adapter = this.adapters.find((item) => item.supports(sourceItem.source_code));
+      if (!adapter) continue;
+      candidates.push(adapter.normalize(sourceItem.payload, sourceItem));
+    }
+
+    if (!candidates.length) {
+      throw new Error(`No source payload ready to merge for movieId=${movieId}`);
+    }
+
+    const ranked = candidates.sort((a, b) => this.scoreNormalized(b) - this.scoreNormalized(a));
+    const primary = ranked[0];
+
+    const merged: MovieNormalized = {
+      slugSuggested: primary.slugSuggested,
+      title: primary.title,
+      originalTitle: primary.originalTitle || null,
+      otherTitles: [...(primary.otherTitles || [])],
+      type: primary.type,
+      year: primary.year || null,
+      status: primary.status || 'unknown',
+      plot: primary.plot || null,
+      posterUrl: primary.posterUrl || null,
+      backdropUrl: primary.backdropUrl || null,
+      trailerUrl: primary.trailerUrl || null,
+      imdbId: primary.imdbId || null,
+      tmdbId: primary.tmdbId || null,
+      genres: [...(primary.genres || [])],
+      countries: [...(primary.countries || [])],
+      tags: [...(primary.tags || [])],
+      people: {
+        actors: [...(primary.people?.actors || [])],
+        directors: [...(primary.people?.directors || [])],
+        writers: [...(primary.people?.writers || [])],
+        producers: [...(primary.people?.producers || [])],
+      },
+      seasons: this.mergeSeasons([], primary.seasons || []),
+    };
+
+    for (const candidate of ranked.slice(1)) {
+      if (!merged.originalTitle && candidate.originalTitle) merged.originalTitle = candidate.originalTitle;
+      if (!merged.year && candidate.year) merged.year = candidate.year;
+      if (merged.status === 'unknown' && candidate.status && candidate.status !== 'unknown') merged.status = candidate.status;
+      if (!merged.plot && candidate.plot) merged.plot = candidate.plot;
+      if (!merged.posterUrl && candidate.posterUrl) merged.posterUrl = candidate.posterUrl;
+      if (!merged.backdropUrl && candidate.backdropUrl) merged.backdropUrl = candidate.backdropUrl;
+      if (!merged.trailerUrl && candidate.trailerUrl) merged.trailerUrl = candidate.trailerUrl;
+      if (!merged.imdbId && candidate.imdbId) merged.imdbId = candidate.imdbId;
+      if (!merged.tmdbId && candidate.tmdbId) merged.tmdbId = candidate.tmdbId;
+      if (merged.type !== 'series' && candidate.type === 'series') merged.type = 'series';
+
+      merged.otherTitles = this.unionStrings(merged.otherTitles || [], candidate.otherTitles || []);
+      merged.genres = this.unionTaxonomies(merged.genres, candidate.genres || []);
+      merged.countries = this.unionTaxonomies(merged.countries, candidate.countries || []);
+      merged.tags = this.unionTaxonomies(merged.tags, candidate.tags || []);
+      merged.people.actors = this.unionPeople(merged.people.actors || [], candidate.people?.actors || []);
+      merged.people.directors = this.unionPeople(merged.people.directors || [], candidate.people?.directors || []);
+      merged.people.writers = this.unionPeople(merged.people.writers || [], candidate.people?.writers || []);
+      merged.people.producers = this.unionPeople(merged.people.producers || [], candidate.people?.producers || []);
+      merged.seasons = this.mergeSeasons(merged.seasons, candidate.seasons || []);
+    }
+
+    return merged;
+  }
+
+  private scoreNormalized(normalized: MovieNormalized): number {
+    const seasonsCount = normalized.seasons?.length || 0;
+    const episodesCount = (normalized.seasons || []).reduce((acc, season) => acc + (season.episodes?.length || 0), 0);
+    const streamsCount = (normalized.seasons || []).reduce(
+      (acc, season) => acc + (season.episodes || []).reduce((epAcc, ep) => epAcc + (ep.streams?.length || 0), 0),
+      0,
+    );
+    const peopleCount =
+      (normalized.people?.actors?.length || 0) +
+      (normalized.people?.directors?.length || 0) +
+      (normalized.people?.writers?.length || 0) +
+      (normalized.people?.producers?.length || 0);
+    const taxonomyCount =
+      (normalized.genres?.length || 0) + (normalized.tags?.length || 0) + (normalized.countries?.length || 0);
+    const plotScore = normalized.plot ? Math.min(normalized.plot.length, 500) : 0;
+    const idScore = (normalized.imdbId ? 100 : 0) + (normalized.tmdbId ? 100 : 0);
+    return plotScore + idScore + seasonsCount * 30 + episodesCount * 50 + streamsCount * 20 + peopleCount * 8 + taxonomyCount * 6;
+  }
+
+  private unionStrings(base: string[], extra: string[]) {
+    const map = new Map<string, string>();
+    for (const text of [...base, ...extra]) {
+      const value = String(text || '').trim();
+      if (!value) continue;
+      const key = normalizeTitle(value);
+      if (!key) continue;
+      if (!map.has(key)) map.set(key, value);
+    }
+    return Array.from(map.values());
+  }
+
+  private unionTaxonomies(base: TaxonomyItem[], extra: TaxonomyItem[]) {
+    const map = new Map<string, TaxonomyItem>();
+    for (const item of [...base, ...extra]) {
+      const name = String(item?.name || '').trim();
+      if (!name) continue;
+      const slug = item?.slug ? String(item.slug).trim() : '';
+      const code = item?.code ? String(item.code).trim() : '';
+      const key = slug || code || normalizeTitle(name);
+      if (!key || map.has(key)) continue;
+      map.set(key, { name, slug: slug || undefined, code: code || undefined });
+    }
+    return Array.from(map.values());
+  }
+
+  private unionPeople(base: PersonItem[], extra: PersonItem[]) {
+    const map = new Map<string, PersonItem>();
+    for (const person of [...base, ...extra]) {
+      const name = String(person?.name || '').trim();
+      if (!name) continue;
+      const slug = person?.slug ? String(person.slug).trim() : '';
+      const key = slug || normalizeTitle(name);
+      if (!key || map.has(key)) continue;
+      map.set(key, { name, slug: slug || undefined, avatarUrl: person.avatarUrl, bio: person.bio });
+    }
+    return Array.from(map.values());
+  }
+
+  private mergeSeasons(base: MovieNormalized['seasons'], extra: MovieNormalized['seasons']) {
+    const seasonMap = new Map<number, { seasonNumber: number; episodes: MovieNormalized['seasons'][number]['episodes'] }>();
+    for (const season of base) {
+      seasonMap.set(season.seasonNumber, { seasonNumber: season.seasonNumber, episodes: [...season.episodes] });
+    }
+
+    for (const season of extra) {
+      const target = seasonMap.get(season.seasonNumber) || { seasonNumber: season.seasonNumber, episodes: [] };
+      const episodeMap = new Map<number, MovieNormalized['seasons'][number]['episodes'][number]>();
+
+      for (const episode of target.episodes) {
+        episodeMap.set(episode.episodeNumber, { ...episode, streams: [...episode.streams] });
+      }
+
+      for (const episode of season.episodes || []) {
+        const existing = episodeMap.get(episode.episodeNumber);
+        if (!existing) {
+          episodeMap.set(episode.episodeNumber, { ...episode, streams: [...(episode.streams || [])] });
+          continue;
+        }
+        existing.name = existing.name || episode.name;
+        existing.streams = this.unionStreams(existing.streams || [], episode.streams || []);
+        episodeMap.set(episode.episodeNumber, existing);
+      }
+
+      target.episodes = Array.from(episodeMap.values()).sort((a, b) => a.episodeNumber - b.episodeNumber);
+      seasonMap.set(season.seasonNumber, target);
+    }
+
+    return Array.from(seasonMap.values()).sort((a, b) => a.seasonNumber - b.seasonNumber);
+  }
+
+  private unionStreams(base: StreamItem[], extra: StreamItem[]) {
+    const map = new Map<string, StreamItem>();
+    for (const stream of [...base, ...extra]) {
+      const url = String(stream?.url || '').trim();
+      if (!url) continue;
+      const serverName = String(stream?.serverName || 'Server').trim() || 'Server';
+      const key = `${normalizeTitle(serverName)}|${sha256(url)}`;
+      if (map.has(key)) continue;
+      map.set(key, {
+        serverName,
+        kind: stream.kind || 'hls',
+        label: stream.label || 'Default',
+        url,
+        headers: stream.headers || null,
+        priority: stream.priority ?? 100,
+      });
+    }
+    return Array.from(map.values());
   }
 
   private async getSourceItem(id: number): Promise<SourceItemRow | null> {

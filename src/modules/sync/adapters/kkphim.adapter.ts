@@ -110,7 +110,7 @@ export class KkphimPayloadAdapter implements PayloadAdapter {
   }
 
   private parseEpisodeNumber(label: string): number {
-    const match = label.match(/(\\d+)/);
+    const match = label.match(/(\d+)/);
     return match ? Number(match[1]) : 1;
   }
 }
