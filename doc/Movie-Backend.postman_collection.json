@@ -1,0 +1,270 @@
+{
+  "info": {
+    "_postman_id": "d7a0d093-1e7e-4a7f-b7db-8b1f37f6f001",
+    "name": "Movie Backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Postman collection cho movie-backend."
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Movies",
+      "item": [
+        {
+          "name": "GET /movies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/movies?page=1&limit=20&sort=popular",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "movies"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "popular"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /movies (search)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/movies?q=hanh%20dong&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "movies"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "hanh dong"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /movies/:slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/movies/{{movieSlug}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "movies",
+                "{{movieSlug}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /movies/:slug/episodes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/movies/{{movieSlug}}/episodes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "movies",
+                "{{movieSlug}}",
+                "episodes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /episodes/:id/streams",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/episodes/{{episodeId}}/streams",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "episodes",
+                "{{episodeId}}",
+                "streams"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Crawl",
+      "item": [
+        {
+          "name": "POST /crawl/ophim/discover",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/crawl/ophim/discover?page=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "crawl",
+                "ophim",
+                "discover"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /crawl/kkphim/discover",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/crawl/kkphim/discover?page=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "crawl",
+                "kkphim",
+                "discover"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /crawl/:source/detail/:externalId",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/crawl/{{source}}/detail/{{externalId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "crawl",
+                "{{source}}",
+                "detail",
+                "{{externalId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sync",
+      "item": [
+        {
+          "name": "POST /sync/source-items/:id",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sync/source-items/{{sourceItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sync",
+                "source-items",
+                "{{sourceItemId}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "movieSlug",
+      "value": "mock-ophim-1"
+    },
+    {
+      "key": "episodeId",
+      "value": "1"
+    },
+    {
+      "key": "source",
+      "value": "ophim"
+    },
+    {
+      "key": "externalId",
+      "value": "sample-external-id"
+    },
+    {
+      "key": "sourceItemId",
+      "value": "1"
+    }
+  ]
+}
