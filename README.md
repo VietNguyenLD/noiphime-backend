@@ -1,5 +1,9 @@
 # Movie Backend - Hướng dẫn chạy dự án
 
+## Tài liệu API
+- API documentation: `doc/API_DOCUMENTATION.md`
+- Postman collection: `doc/Movie-Backend.postman_collection.json`
+
 ## Yêu cầu
 - Node.js + npm (khuyến nghị Node 18+)
 - Docker + Docker Compose (nếu chạy bằng Docker)
@@ -106,4 +110,30 @@ Tuỳ chọn source/page:
 
 ```bash
 ./scripts/test-flow.sh ophim 1
+```
+
+## Crawl toàn bộ dữ liệu hiện tại của nguồn
+Script tự lấy `totalPages` mới nhất từ API nguồn và enqueue toàn bộ discover pages:
+
+```bash
+./scripts/crawl-all-current.sh
+```
+
+Chạy riêng từng nguồn:
+
+```bash
+./scripts/crawl-all-current.sh ophim
+./scripts/crawl-all-current.sh kkphim
+```
+
+Test nhanh với giới hạn số trang:
+
+```bash
+./scripts/crawl-all-current.sh ophim 10
+```
+
+Theo dõi worker:
+
+```bash
+docker compose logs -f api
 ```
