@@ -50,6 +50,13 @@ export interface MovieNormalized {
   type: MediaType;
   year?: number | null;
   status?: MovieStatus | null;
+  durationMin?: number | null;
+  quality?: string | null;
+  language?: string | null;
+  subtitle?: string | null;
+  viewCount?: number | null;
+  ratingAvg?: number | null;
+  ratingCount?: number | null;
   plot?: string | null;
   posterUrl?: string | null;
   backdropUrl?: string | null;

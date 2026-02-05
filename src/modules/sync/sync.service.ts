@@ -105,6 +105,13 @@ export class SyncService {
       type: primary.type,
       year: primary.year || null,
       status: primary.status || 'unknown',
+      durationMin: primary.durationMin ?? null,
+      quality: primary.quality ?? null,
+      language: primary.language ?? null,
+      subtitle: primary.subtitle ?? null,
+      viewCount: primary.viewCount ?? null,
+      ratingAvg: primary.ratingAvg ?? null,
+      ratingCount: primary.ratingCount ?? null,
       plot: primary.plot || null,
       posterUrl: primary.posterUrl || null,
       backdropUrl: primary.backdropUrl || null,
@@ -127,6 +134,32 @@ export class SyncService {
       if (!merged.originalTitle && candidate.originalTitle) merged.originalTitle = candidate.originalTitle;
       if (!merged.year && candidate.year) merged.year = candidate.year;
       if (merged.status === 'unknown' && candidate.status && candidate.status !== 'unknown') merged.status = candidate.status;
+      if (!merged.durationMin && candidate.durationMin) merged.durationMin = candidate.durationMin;
+      if (!merged.quality && candidate.quality) merged.quality = candidate.quality;
+      if (!merged.language && candidate.language) merged.language = candidate.language;
+      if (!merged.subtitle && candidate.subtitle) merged.subtitle = candidate.subtitle;
+      if (!merged.viewCount && candidate.viewCount !== null && candidate.viewCount !== undefined) {
+        merged.viewCount = candidate.viewCount;
+      } else if (
+        merged.viewCount !== null &&
+        merged.viewCount !== undefined &&
+        candidate.viewCount !== null &&
+        candidate.viewCount !== undefined
+      ) {
+        merged.viewCount = Math.max(merged.viewCount, candidate.viewCount);
+      }
+      if (
+        candidate.ratingAvg !== null &&
+        candidate.ratingAvg !== undefined &&
+        (merged.ratingAvg === null ||
+          merged.ratingAvg === undefined ||
+          (candidate.ratingCount || 0) > (merged.ratingCount || 0))
+      ) {
+        merged.ratingAvg = candidate.ratingAvg;
+        merged.ratingCount = candidate.ratingCount ?? merged.ratingCount ?? null;
+      } else if (merged.ratingCount === null || merged.ratingCount === undefined) {
+        merged.ratingCount = candidate.ratingCount ?? merged.ratingCount ?? null;
+      }
       if (!merged.plot && candidate.plot) merged.plot = candidate.plot;
       if (!merged.posterUrl && candidate.posterUrl) merged.posterUrl = candidate.posterUrl;
       if (!merged.backdropUrl && candidate.backdropUrl) merged.backdropUrl = candidate.backdropUrl;
@@ -307,32 +340,46 @@ export class SyncService {
         other_titles,
         type,
         year,
+        duration_min,
         status,
+        quality,
+        language,
+        subtitle,
         plot,
         poster_url,
         backdrop_url,
         trailer_url,
         imdb_id,
         tmdb_id,
+        view_count,
+        rating_avg,
+        rating_count,
         is_active
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, true)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, true)
       RETURNING id;
       `,
       [
         slug,
         normalized.title,
         normalized.originalTitle || null,
-        normalized.otherTitles || null,
+        normalized.otherTitles ? JSON.stringify(normalized.otherTitles) : null,
         normalized.type,
         normalized.year || null,
+        normalized.durationMin || null,
         normalized.status || 'unknown',
+        normalized.quality || null,
+        normalized.language || null,
+        normalized.subtitle || null,
         normalized.plot || null,
         normalized.posterUrl || null,
         normalized.backdropUrl || null,
         normalized.trailerUrl || null,
         normalized.imdbId || null,
         normalized.tmdbId || null,
+        normalized.viewCount ?? 0,
+        normalized.ratingAvg ?? 0,
+        normalized.ratingCount ?? 0,
       ],
     );
 
@@ -386,12 +433,19 @@ export class SyncService {
       { column: 'type', value: normalized.type },
       { column: 'year', value: normalized.year },
       { column: 'status', value: normalized.status },
+      { column: 'duration_min', value: normalized.durationMin },
+      { column: 'quality', value: normalized.quality },
+      { column: 'language', value: normalized.language },
+      { column: 'subtitle', value: normalized.subtitle },
       { column: 'plot', value: normalized.plot },
       { column: 'poster_url', value: normalized.posterUrl },
       { column: 'backdrop_url', value: normalized.backdropUrl },
       { column: 'trailer_url', value: normalized.trailerUrl },
       { column: 'imdb_id', value: normalized.imdbId },
       { column: 'tmdb_id', value: normalized.tmdbId },
+      { column: 'view_count', value: normalized.viewCount },
+      { column: 'rating_avg', value: normalized.ratingAvg },
+      { column: 'rating_count', value: normalized.ratingCount },
     ];
 
     const sets: string[] = [];
@@ -399,7 +453,12 @@ export class SyncService {
 
     for (const field of fields) {
       if (field.value === undefined || field.value === null) continue;
-      params.push(field.value);
+      if (field.column === 'other_titles' && field.value !== null && field.value !== undefined) {
+        const jsonValue = typeof field.value === 'string' ? field.value : JSON.stringify(field.value);
+        params.push(jsonValue);
+      } else {
+        params.push(field.value);
+      }
       sets.push(`${field.column} = $${params.length}`);
     }
 

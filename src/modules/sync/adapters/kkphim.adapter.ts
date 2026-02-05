@@ -11,15 +11,28 @@ export class KkphimPayloadAdapter implements PayloadAdapter {
     const movie = payload?.movie || {};
     const title = movie?.name || sourceItem.title || 'Unknown Title';
     const originalTitle = movie?.origin_name || null;
+    const durationMin = this.parseDuration(movie?.time);
+    const ratingAvg =
+      this.toNumber(movie?.tmdb?.vote_average) ?? this.toNumber(movie?.imdb?.vote_average) ?? null;
+    const ratingCount =
+      this.toNumber(movie?.tmdb?.vote_count) ?? this.toNumber(movie?.imdb?.vote_count) ?? null;
+    const viewCount = this.toNumber(movie?.view);
 
     return {
       slugSuggested: slugify(movie?.slug || title),
       title,
       originalTitle,
       otherTitles: [],
-      type: movie?.type === 'series' ? 'series' : 'single',
+      type: this.mapType(movie),
       year: movie?.year || sourceItem.year || null,
       status: this.mapStatus(movie?.status),
+      durationMin,
+      quality: movie?.quality || null,
+      language: movie?.lang || null,
+      subtitle: movie?.lang || null,
+      viewCount,
+      ratingAvg,
+      ratingCount,
       plot: movie?.content || null,
       posterUrl: movie?.poster_url || null,
       backdropUrl: movie?.thumb_url || null,
@@ -49,6 +62,34 @@ export class KkphimPayloadAdapter implements PayloadAdapter {
     if (status === 'completed') return 'completed';
     if (status === 'upcoming') return 'upcoming';
     return 'unknown';
+  }
+
+  private mapType(movie: any): 'single' | 'series' {
+    const raw = String(movie?.type || '').toLowerCase().trim();
+    if (
+      raw === 'series' ||
+      raw === 'tv' ||
+      raw === 'phimbo' ||
+      raw === 'phim-bo' ||
+      raw === 'hoathinh'
+    )
+      return 'series';
+    if (raw === 'single' || raw === 'movie' || raw === 'phimle' || raw === 'phim-le') return 'single';
+    if (movie?.episode_total || movie?.episode_current) return 'series';
+    return 'single';
+  }
+
+  private parseDuration(value: unknown): number | null {
+    if (!value) return null;
+    const text = String(value);
+    const match = text.match(/(\d+)/);
+    return match ? Number(match[1]) : null;
+  }
+
+  private toNumber(value: unknown): number | null {
+    if (value === undefined || value === null || value === '') return null;
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
   }
 
   private normalizeSeasons(payload: any, type: string) {
