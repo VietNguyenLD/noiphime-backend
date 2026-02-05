@@ -52,11 +52,12 @@ export class OphimPayloadAdapter implements PayloadAdapter {
       imdbId: payload?.movie?.imdb?.id || payload?.movie?.imdb_id || null,
       tmdbId: payload?.movie?.tmdb?.id || payload?.movie?.tmdb_id || null,
       genres: (payload?.movie?.category || []).map((g: any) => ({ name: g.name || g, slug: g.slug })),
-      countries: (payload?.movie?.country || []).map((c: any) => ({
-        name: c.name || c,
-        code: c.code,
-        slug: c.slug,
-      })),
+      countries: (payload?.movie?.country || []).map((c: any) => {
+        const name = c?.name || c;
+        const slug = c?.slug || null;
+        const code = c?.code || slug || null;
+        return { name, code, slug };
+      }),
       tags: (payload?.movie?.tags || []).map((t: any) => ({ name: t.name || t, slug: t.slug })),
       people: {
         actors: this.toStringArray(payload?.movie?.actor ?? payload?.movie?.actors).map((p) => ({ name: p })),

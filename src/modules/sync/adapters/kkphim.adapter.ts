@@ -41,9 +41,9 @@ export class KkphimPayloadAdapter implements PayloadAdapter {
       tmdbId: movie?.tmdb?.id || null,
       genres: (movie?.category || []).map((g: any) => ({ name: g.name || g, slug: g.slug })),
       countries: (movie?.country || []).map((c: any) => {
-        const name = c.name || c;
-        const rawCode = c.slug || c.code || null;
-        const code = rawCode && String(rawCode).length <= 10 ? String(rawCode) : null;
+        const name = c?.name || c;
+        const slug = c?.slug || null;
+        const code = c?.code || slug || null;
         return { name, code };
       }),
       tags: [],
