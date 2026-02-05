@@ -167,7 +167,73 @@ Response mẫu:
 
 ---
 
-## 4) Sync
+## 4) Collections
+
+### GET `/collection/list`
+Lấy danh sách collections (có phân trang). Mỗi collection trả kèm danh sách movies theo filter.
+
+Query params:
+- `page` (number, mặc định `1`, min `1`)
+- `limit` (number, mặc định `10`, min `1`, max `50`)
+
+Response mẫu:
+```json
+{
+  "collections": [
+    {
+      "_id": "1",
+      "name": "Phim Hàn Quốc mới",
+      "slug": "phim-han-quoc-moi",
+      "order": 1,
+      "random_data": false,
+      "type": 2,
+      "filter": {
+        "country_code": ["KR"],
+        "status": "On Going",
+        "type": "",
+        "top_views": "",
+        "limit": "20",
+        "sort_by": "updated_at",
+        "order": "-1"
+      },
+      "movies": [
+        {
+          "_id": "123",
+          "public_id": "movie-a",
+          "original_title": "Movie A",
+          "english_title": "Movie A",
+          "title": "Movie A",
+          "slug": "movie-a",
+          "overview": "Plot...",
+          "release_date": "2025-01-01",
+          "quality": "HD",
+          "rating": 8.1,
+          "runtime": 120,
+          "type": "series",
+          "origin_country": ["KR"],
+          "status": "ongoing",
+          "latest_season": 2,
+          "imdb_rating": null,
+          "latest_episode": 10,
+          "year": 2025,
+          "genres": [
+            { "id": 1, "name": "Hành Động", "slug": "hanh-dong" }
+          ],
+          "images": {
+            "poster": "https://...",
+            "backdrop": "https://..."
+          }
+        }
+      ]
+    }
+  ],
+  "totalPages": 4
+}
+```
+
+---
+
+## 5) Sync
 
 ### POST `/sync/source-items/:id`
 Đồng bộ 1 `source_item` vào bảng `movies` và các bảng liên quan.

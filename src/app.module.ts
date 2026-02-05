@@ -11,6 +11,8 @@ import { MoviesModule } from './modules/movies/movies.module';
 import { SearchModule } from './modules/search/search.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { CrawlModule } from './modules/crawl/crawl.module';
+import { DatabaseModule } from './database/database.module';
+import { CollectionsModule } from './modules/collections/collections.module';
 
 @Module({
   imports: [
@@ -18,6 +20,7 @@ import { CrawlModule } from './modules/crawl/crawl.module';
       isGlobal: true,
       load: [appConfig, databaseConfig, redisConfig],
     }),
+    DatabaseModule,
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -46,6 +49,7 @@ import { CrawlModule } from './modules/crawl/crawl.module';
     SearchModule,
     SyncModule,
     CrawlModule,
+    CollectionsModule,
   ],
 })
 export class AppModule {}

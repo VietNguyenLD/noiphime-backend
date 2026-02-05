@@ -7,7 +7,8 @@
     "start": "node dist/main.js",
     "start:dev": "nest start --watch",
     "build": "nest build",
-    "seed": "ts-node src/modules/seed/seed.runner.ts"
+    "seed": "ts-node src/modules/seed/seed.runner.ts",
+    "gen:collections": "ts-node src/jobs/generate-collections.job.ts"
   },
   "dependencies": {
     "@nestjs/bullmq": "^10.1.1",

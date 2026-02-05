@@ -342,6 +342,27 @@ CREATE INDEX idx_movie_search_docs_tsv
 CREATE INDEX idx_movie_search_docs_trgm
   ON movie_search_docs USING GIN(search_text gin_trgm_ops);
 
+/* ============================================================================
+   10. COLLECTIONS
+   - Bộ sưu tập cho trang chủ / danh mục
+============================================================================ */
+
+CREATE TABLE collections (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) NOT NULL UNIQUE,
+  "order" INT NOT NULL DEFAULT 0,
+  random_data BOOLEAN NOT NULL DEFAULT TRUE,
+  type INT,
+  filter JSONB NOT NULL DEFAULT '{}'::jsonb,
+  is_published BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_collections_published ON collections(is_published);
+CREATE INDEX idx_collections_order ON collections("order");
+
 
 /* ============================================================================
    END OF SCHEMA
