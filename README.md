@@ -132,6 +132,30 @@ Test nhanh với giới hạn số trang:
 ./scripts/crawl-all-current.sh ophim 10
 ```
 
+## Sync sau khi crawl (đổ dữ liệu sang bảng `movies`)
+Script `crawl-all-current.sh` mặc định chỉ enqueue discover. Nếu muốn tự động sync sang `movies` sau khi crawl xong:
+
+```bash
+SYNC_AFTER=1 SYNC_LIMIT=500 ./scripts/crawl-all-current.sh ophim 2
+```
+
+Sync tất cả (không giới hạn):
+
+```bash
+SYNC_AFTER=1 SYNC_LIMIT=all ./scripts/crawl-all-current.sh ophim 2
+```
+
+Nếu worker queue chưa chạy, dùng chế độ inline:
+
+```bash
+SYNC_AFTER=1 SYNC_LIMIT=all INLINE_PROCESSING=1 ./scripts/crawl-all-current.sh ophim 2
+```
+
+- `INLINE_PROCESSING=1`: chạy crawl/detail trực tiếp (không qua queue) để test nhanh hoặc khi worker chưa chạy
+
+- `SYNC_AFTER=1`: bật sync sau crawl
+- `SYNC_LIMIT=500`: số lượng `source_items` tối đa sẽ sync mỗi nguồn (hoặc `all` để sync hết)
+
 Theo dõi worker:
 
 ```bash

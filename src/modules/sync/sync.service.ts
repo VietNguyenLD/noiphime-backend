@@ -331,6 +331,10 @@ export class SyncService {
     }
 
     const slug = normalized.slugSuggested || slugify(normalized.title);
+    const ratingAvg = this.clampRatingAvg(normalized.ratingAvg);
+    const ratingCount = this.clampInt(normalized.ratingCount);
+    const viewCount = this.clampBigInt(normalized.viewCount);
+
     const rows = await queryRunner.query(
       `
       INSERT INTO movies (
@@ -377,9 +381,9 @@ export class SyncService {
         normalized.trailerUrl || null,
         normalized.imdbId || null,
         normalized.tmdbId || null,
-        normalized.viewCount ?? 0,
-        normalized.ratingAvg ?? 0,
-        normalized.ratingCount ?? 0,
+        viewCount ?? 0,
+        ratingAvg ?? 0,
+        ratingCount ?? 0,
       ],
     );
 
@@ -426,6 +430,10 @@ export class SyncService {
     movieId: number,
     normalized: MovieNormalized,
   ) {
+    const ratingAvg = this.clampRatingAvg(normalized.ratingAvg);
+    const ratingCount = this.clampInt(normalized.ratingCount);
+    const viewCount = this.clampBigInt(normalized.viewCount);
+
     const fields: Array<{ column: string; value: any }> = [
       { column: 'title', value: normalized.title },
       { column: 'original_title', value: normalized.originalTitle },
@@ -443,9 +451,9 @@ export class SyncService {
       { column: 'trailer_url', value: normalized.trailerUrl },
       { column: 'imdb_id', value: normalized.imdbId },
       { column: 'tmdb_id', value: normalized.tmdbId },
-      { column: 'view_count', value: normalized.viewCount },
-      { column: 'rating_avg', value: normalized.ratingAvg },
-      { column: 'rating_count', value: normalized.ratingCount },
+      { column: 'view_count', value: viewCount },
+      { column: 'rating_avg', value: ratingAvg },
+      { column: 'rating_count', value: ratingCount },
     ];
 
     const sets: string[] = [];
@@ -533,7 +541,8 @@ export class SyncService {
   private async upsertCountries(queryRunner: QueryRunner, items: TaxonomyItem[]) {
     const ids: number[] = [];
     for (const item of items) {
-      if (item.code) {
+      const code = item.code ? String(item.code).slice(0, 10) : null;
+      if (code) {
         const rows = await queryRunner.query(
           `
           INSERT INTO countries (code, name)
@@ -542,7 +551,7 @@ export class SyncService {
           DO UPDATE SET name = EXCLUDED.name
           RETURNING id;
           `,
-          [item.code, item.name],
+          [code, item.name],
         );
         if (rows[0]?.id) {
           ids.push(rows[0].id);
@@ -794,5 +803,29 @@ export class SyncService {
     } catch (error) {
       this.logger.warn('enqueue_movie_search not available, relying on triggers');
     }
+  }
+
+  private clampRatingAvg(value: number | null | undefined): number | null {
+    if (value === null || value === undefined) return null;
+    const num = Number(value);
+    if (!Number.isFinite(num)) return null;
+    const clamped = Math.min(9.99, Math.max(0, num));
+    return Math.round(clamped * 100) / 100;
+  }
+
+  private clampInt(value: number | null | undefined): number | null {
+    if (value === null || value === undefined) return null;
+    const num = Number(value);
+    if (!Number.isFinite(num)) return null;
+    const clamped = Math.min(2147483647, Math.max(0, Math.floor(num)));
+    return clamped;
+  }
+
+  private clampBigInt(value: number | null | undefined): number | null {
+    if (value === null || value === undefined) return null;
+    const num = Number(value);
+    if (!Number.isFinite(num)) return null;
+    const clamped = Math.min(9_223_372_036_854_775_807, Math.max(0, Math.floor(num)));
+    return clamped;
   }
 }
