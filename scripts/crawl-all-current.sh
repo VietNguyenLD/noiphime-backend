@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-API_BASE_URL="${API_BASE_URL:-http://localhost:3000}"
+API_BASE_URL="${API_BASE_URL:-http://localhost:4000}"
 TARGET_SOURCE="${1:-all}"          # all | ophim | kkphim
 MAX_PAGES_OVERRIDE="${2:-}"        # optional: giới hạn page để test nhanh
 RETRY_PER_PAGE="${RETRY_PER_PAGE:-3}"

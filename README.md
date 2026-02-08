@@ -18,7 +18,7 @@ docker compose logs -f api
 ```
 
 Mặc định các service:
-- API chạy tại `http://localhost:3000`
+- API chạy tại `http://localhost:4000`
 - Postgres chạy tại `localhost:5432`
 - Redis chạy tại `localhost:6379`
 - PgAdmin chạy tại `http://localhost:5050`
@@ -37,7 +37,7 @@ npm install
 2. Tạo hoặc cập nhật file `.env` theo mẫu sau (có thể copy từ `.env.docker` và đổi host về `localhost`):
 
 ```env
-PORT=3000
+PORT=4000
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=movie_user
@@ -90,7 +90,7 @@ npm run start
 Mở:
 
 ```text
-http://localhost:3000/health
+http://localhost:4000/health
 ```
 
 Nếu mọi thứ ổn, trả về:

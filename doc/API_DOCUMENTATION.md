@@ -1,7 +1,7 @@
 # Movie Backend API Documentation
 
 ## Base URL
-- Local: `http://localhost:3000`
+- Local: `http://localhost:4000`
 
 ## Response Format
 - API trả JSON trực tiếp từ service/controller.
@@ -298,9 +298,9 @@ Lỗi:
 
 ## Quick Test Commands
 ```bash
-curl -s http://localhost:3000/health
-curl -s "http://localhost:3000/movies?page=1&limit=20"
-curl -s -X POST "http://localhost:3000/crawl/ophim/discover?page=1"
-curl -s -X POST "http://localhost:3000/crawl/kkphim/discover?page=1"
-curl -s -X POST "http://localhost:3000/sync/source-items/1"
+curl -s http://localhost:4000/health
+curl -s "http://localhost:4000/movies?page=1&limit=20"
+curl -s -X POST "http://localhost:4000/crawl/ophim/discover?page=1"
+curl -s -X POST "http://localhost:4000/crawl/kkphim/discover?page=1"
+curl -s -X POST "http://localhost:4000/sync/source-items/1"
 ```

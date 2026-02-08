@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-API_BASE_URL="${API_BASE_URL:-http://localhost:3000}"
+API_BASE_URL="${API_BASE_URL:-http://localhost:4000}"
 SOURCE="${1:-kkphim}"
 PAGE="${2:-1}"
 
