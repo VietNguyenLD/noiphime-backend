@@ -14,6 +14,7 @@ import { CrawlModule } from './modules/crawl/crawl.module';
 import { DatabaseModule } from './database/database.module';
 import { CollectionsModule } from './modules/collections/collections.module';
 import { SliderModule } from './modules/slider/slider.module';
+import { MenuModule } from './modules/menu/menu.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { SliderModule } from './modules/slider/slider.module';
     CrawlModule,
     CollectionsModule,
     SliderModule,
+    MenuModule,
   ],
 })
 export class AppModule {}

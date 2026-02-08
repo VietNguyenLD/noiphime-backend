@@ -26,6 +26,29 @@ Response mẫu:
 
 ---
 
+## 1.1) Menu
+
+### GET `/menu`
+Lấy dữ liệu menu header (loại phim, thể loại, quốc gia).
+
+Response mẫu:
+```json
+{
+  "types": [
+    { "key": "single", "label": "Phim le" },
+    { "key": "series", "label": "Phim bo" }
+  ],
+  "genres": [
+    { "id": 1, "name": "Action", "slug": "action" }
+  ],
+  "countries": [
+    { "id": 1, "name": "Japan", "code": "JP" }
+  ]
+}
+```
+
+---
+
 ## 2) Movies
 
 ### GET `/movies`
