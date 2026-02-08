@@ -7,7 +7,11 @@ import { ConfigService } from '@nestjs/config';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
   app.enableCors({
-    origin: ['http://36.50.55.101', 'http://36.50.55.101:80'],
+    origin: [
+      'http://36.50.55.101',
+      'http://36.50.55.101:80',
+      'https://noiphim-u5qb.vercel.app',
+    ],
     credentials: true,
   });
   app.useGlobalPipes(
