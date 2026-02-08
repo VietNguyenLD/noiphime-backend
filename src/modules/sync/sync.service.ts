@@ -541,7 +541,7 @@ export class SyncService {
   private async upsertCountries(queryRunner: QueryRunner, items: TaxonomyItem[]) {
     const ids: number[] = [];
     for (const item of items) {
-      const code = item.code ? String(item.code).slice(0, 10) : null;
+      const code = item.code ? String(item.code).slice(0, 16) : null;
       if (code) {
         const rows = await queryRunner.query(
           `

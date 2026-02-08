@@ -27,8 +27,8 @@ export class MenuService {
     );
 
     const types = [
-      { key: 'single', label: 'Phim le' },
-      { key: 'series', label: 'Phim bo' },
+      { key: 'single', label: 'Phim lẻ' },
+      { key: 'series', label: 'Phim bộ' },
     ];
 
     return {
