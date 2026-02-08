@@ -96,6 +96,12 @@ Response mẫu:
   "id": 1,
   "slug": "movie-a",
   "title": "Movie A",
+  "profile_sizes": {
+    "h632": "https://image.tmdb.org/t/p/h632",
+    "original": "https://image.tmdb.org/t/p/original",
+    "w185": "https://image.tmdb.org/t/p/w185",
+    "w45": "https://image.tmdb.org/t/p/w45"
+  },
   "genres": [],
   "countries": [],
   "tags": [],

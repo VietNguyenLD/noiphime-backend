@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, QueryRunner } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 import { PayloadAdapter } from './adapters/payload-adapter';
 import { OphimPayloadAdapter } from './adapters/ophim.adapter';
 import { KkphimPayloadAdapter } from './adapters/kkphim.adapter';
@@ -21,7 +23,10 @@ export class SyncService {
     new KkphimPayloadAdapter(),
   ];
 
-  constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
+  constructor(
+    @InjectDataSource() private readonly dataSource: DataSource,
+    private readonly configService: ConfigService,
+  ) {}
 
   async syncSourceItem(sourceItemId: number) {
     const sourceItem = await this.getSourceItem(sourceItemId);
@@ -34,6 +39,9 @@ export class SyncService {
     }
 
     const normalized = adapter.normalize(sourceItem.payload, sourceItem);
+    const externalPeople = sourceItem.external_id
+      ? await this.fetchExternalPeople(sourceItem.source_code, sourceItem.external_id)
+      : null;
     this.logger.log(
       `[SYNC] normalized sourceItem=${sourceItemId} seasons=${normalized.seasons?.length ?? 0} eps=${normalized.seasons?.[0]?.episodes?.length ?? 0}`,
     );
@@ -46,10 +54,21 @@ export class SyncService {
       const { movieId, matchedBy } = await this.upsertMovie(queryRunner, normalized);
 
       await this.upsertMovieSourceMap(queryRunner, movieId, sourceItemId, matchedBy);
-      const mergedNormalized = await this.buildMergedNormalized(queryRunner, movieId);
+      let mergedNormalized = normalized;
+      try {
+        mergedNormalized = await this.buildMergedNormalized(queryRunner, movieId);
+      } catch (error) {
+        this.logger.warn(
+          `[SYNC] merge skipped movieId=${movieId} reason=${(error as Error)?.message || 'unknown'}`,
+        );
+      }
+
       await this.updateMovie(queryRunner, movieId, mergedNormalized);
       await this.syncTaxonomies(queryRunner, movieId, mergedNormalized);
       await this.syncPeople(queryRunner, movieId, mergedNormalized);
+      if (externalPeople?.peoples?.length) {
+        await this.syncExternalPeople(queryRunner, movieId, externalPeople.peoples);
+      }
       await this.syncSeasonsAndEpisodes(queryRunner, movieId, mergedNormalized);
 
       await queryRunner.query('UPDATE movies SET updated_at = NOW() WHERE id = $1', [movieId]);
@@ -625,6 +644,105 @@ export class SyncService {
     if (rows[0]?.id) return rows[0].id;
     const fallback = await queryRunner.query('SELECT id FROM people WHERE slug = $1', [slug]);
     return fallback[0].id;
+  }
+
+  private async fetchExternalPeople(sourceCode: string, slug: string) {
+    const isOphim = sourceCode === 'ophim';
+    const baseUrl = isOphim
+      ? this.configService.get<string>('OPHIM_BASE_URL') || process.env.OPHIM_BASE_URL
+      : this.configService.get<string>('KKPHIM_BASE_URL') || process.env.KKPHIM_BASE_URL;
+    const path = isOphim
+      ? this.configService.get<string>('OPHIM_PEOPLE_PATH') ||
+        process.env.OPHIM_PEOPLE_PATH ||
+        '/v1/api/phim/{slug}/peoples'
+      : this.configService.get<string>('KKPHIM_PEOPLE_PATH') ||
+        process.env.KKPHIM_PEOPLE_PATH ||
+        '/v1/api/phim/{slug}/peoples';
+    if (!baseUrl) return null;
+
+    const replaced = path.replace(/\{(\w+)\}/g, (_, key) => (key === 'slug' ? String(slug) : ''));
+    const url = new URL(replaced, baseUrl).toString();
+
+    try {
+      const res = await axios.get(url, { timeout: 15000 });
+      const data = res.data?.data || null;
+      const peopleCount = Array.isArray(data?.peoples) ? data.peoples.length : 0;
+      const sampleProfile = data?.peoples?.find((p: any) => p?.profile_path)?.profile_path || null;
+      this.logger.log(
+        `[SYNC] people fetched source=${sourceCode} slug=${slug} count=${peopleCount} sample_profile=${sampleProfile || 'null'}`,
+      );
+      return data;
+    } catch (error: any) {
+      this.logger.warn(`[SYNC] people fetch failed source=${sourceCode} slug=${slug} error=${error?.message}`);
+      return null;
+    }
+  }
+
+  private mapDepartmentToRole(dept: string | null | undefined) {
+    const normalized = String(dept || '').toLowerCase().trim();
+    if (normalized === 'acting') return 'actor';
+    if (normalized === 'directing') return 'director';
+    if (normalized === 'writing') return 'writer';
+    if (normalized === 'production') return 'producer';
+    return 'other';
+  }
+
+  private async syncExternalPeople(
+    queryRunner: QueryRunner,
+    movieId: number,
+    peoples: Array<{
+      tmdb_people_id?: number | string | null;
+      name?: string | null;
+      original_name?: string | null;
+      character?: string | null;
+      known_for_department?: string | null;
+      profile_path?: string | null;
+    }>,
+  ) {
+    let orderIndex = 0;
+    for (const person of peoples) {
+      const name = (person.name || person.original_name || '').trim();
+      if (!name) continue;
+
+      const avatarUrl = person.profile_path || undefined;
+      const existingByName = await queryRunner.query(
+        'SELECT id, avatar_url FROM people WHERE trim(name) = trim($1) LIMIT 1',
+        [name],
+      );
+
+      let personId: number;
+      if (existingByName[0]?.id) {
+        personId = existingByName[0].id;
+        if (avatarUrl) {
+          await queryRunner.query(
+            "UPDATE people SET avatar_url = $1 WHERE trim(name) = trim($2) AND (avatar_url IS NULL OR avatar_url = '')",
+            [avatarUrl, name],
+          );
+        }
+      } else {
+        const tmdbId = person.tmdb_people_id ? String(person.tmdb_people_id).trim() : '';
+        const slug = tmdbId ? slugify(`${name}-${tmdbId}`) : slugify(name);
+        personId = await this.upsertPerson(queryRunner, {
+          name,
+          slug,
+          avatarUrl,
+        });
+      }
+
+      const roleType = this.mapDepartmentToRole(person.known_for_department);
+      const character = person.character ? String(person.character).trim() : null;
+
+      await queryRunner.query(
+        `
+        INSERT INTO movie_people (movie_id, person_id, role_type, character_name, order_index)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT DO NOTHING;
+        `,
+        [movieId, personId, roleType, character, orderIndex],
+      );
+
+      orderIndex += 1;
+    }
   }
 
   private async syncSeasonsAndEpisodes(
