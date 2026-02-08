@@ -10,7 +10,6 @@ type MovieRow = {
   title: string | null;
   slug: string | null;
   overview: string | null;
-  release_date: string | null;
   quality: string | null;
   rating: string | number | null;
   runtime: number | null;
@@ -57,7 +56,6 @@ export class SliderService {
           m.title AS title,
           m.slug AS slug,
           m.plot AS overview,
-          m.release_date AS release_date,
           m.quality AS quality,
           m.rating_avg AS rating,
           m.duration_min AS runtime,

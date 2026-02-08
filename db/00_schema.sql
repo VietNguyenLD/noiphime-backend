@@ -73,13 +73,10 @@ CREATE TABLE movies (
   type movie_type NOT NULL DEFAULT 'single',
 
   year INT,
-  release_date DATE,
   duration_min INT,
 
   status movie_status NOT NULL DEFAULT 'unknown',
-  content_rating VARCHAR(50),   -- 13+, 18+...
   quality VARCHAR(50),          -- HD/FHD/4K
-  language VARCHAR(50),
   subtitle VARCHAR(50),         -- vietsub/thuyetminh/raw
 
   plot TEXT,

@@ -40,7 +40,6 @@ export class OphimPayloadAdapter implements PayloadAdapter {
       status,
       durationMin,
       quality: payload?.movie?.quality || null,
-      language: payload?.movie?.lang || null,
       subtitle: payload?.movie?.lang || null,
       viewCount,
       ratingAvg,

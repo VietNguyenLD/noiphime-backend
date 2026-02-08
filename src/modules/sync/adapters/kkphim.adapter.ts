@@ -28,7 +28,6 @@ export class KkphimPayloadAdapter implements PayloadAdapter {
       status: this.mapStatus(movie?.status),
       durationMin,
       quality: movie?.quality || null,
-      language: movie?.lang || null,
       subtitle: movie?.lang || null,
       viewCount,
       ratingAvg,

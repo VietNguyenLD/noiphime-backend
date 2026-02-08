@@ -107,7 +107,6 @@ export class SyncService {
       status: primary.status || 'unknown',
       durationMin: primary.durationMin ?? null,
       quality: primary.quality ?? null,
-      language: primary.language ?? null,
       subtitle: primary.subtitle ?? null,
       viewCount: primary.viewCount ?? null,
       ratingAvg: primary.ratingAvg ?? null,
@@ -136,7 +135,6 @@ export class SyncService {
       if (merged.status === 'unknown' && candidate.status && candidate.status !== 'unknown') merged.status = candidate.status;
       if (!merged.durationMin && candidate.durationMin) merged.durationMin = candidate.durationMin;
       if (!merged.quality && candidate.quality) merged.quality = candidate.quality;
-      if (!merged.language && candidate.language) merged.language = candidate.language;
       if (!merged.subtitle && candidate.subtitle) merged.subtitle = candidate.subtitle;
       if (!merged.viewCount && candidate.viewCount !== null && candidate.viewCount !== undefined) {
         merged.viewCount = candidate.viewCount;
@@ -347,7 +345,6 @@ export class SyncService {
         duration_min,
         status,
         quality,
-        language,
         subtitle,
         plot,
         poster_url,
@@ -373,7 +370,6 @@ export class SyncService {
         normalized.durationMin || null,
         normalized.status || 'unknown',
         normalized.quality || null,
-        normalized.language || null,
         normalized.subtitle || null,
         normalized.plot || null,
         normalized.posterUrl || null,
@@ -443,7 +439,6 @@ export class SyncService {
       { column: 'status', value: normalized.status },
       { column: 'duration_min', value: normalized.durationMin },
       { column: 'quality', value: normalized.quality },
-      { column: 'language', value: normalized.language },
       { column: 'subtitle', value: normalized.subtitle },
       { column: 'plot', value: normalized.plot },
       { column: 'poster_url', value: normalized.posterUrl },

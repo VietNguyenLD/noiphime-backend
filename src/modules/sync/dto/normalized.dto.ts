@@ -52,7 +52,6 @@ export interface MovieNormalized {
   status?: MovieStatus | null;
   durationMin?: number | null;
   quality?: string | null;
-  language?: string | null;
   subtitle?: string | null;
   viewCount?: number | null;
   ratingAvg?: number | null;

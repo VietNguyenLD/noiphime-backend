@@ -135,7 +135,6 @@ async function getTopCountries(db: DatabaseService, limit: number) {
     JOIN movie_countries mc ON mc.movie_id = m.id
     JOIN countries c ON c.id = mc.country_id
     WHERE m.updated_at >= now() - interval '90 days'
-       OR (m.release_date IS NOT NULL AND m.release_date >= (current_date - interval '90 days'))
     GROUP BY c.code, c.name
     ORDER BY COUNT(*) DESC
     LIMIT $1;
@@ -166,7 +165,6 @@ async function getTopGenres(db: DatabaseService, limit: number) {
     JOIN movie_genres mg ON mg.movie_id = m.id
     JOIN genres g ON g.id = mg.genre_id
     WHERE m.updated_at >= now() - interval '90 days'
-       OR (m.release_date IS NOT NULL AND m.release_date >= (current_date - interval '90 days'))
     GROUP BY g.slug, g.name
     ORDER BY COUNT(*) DESC
     LIMIT $1;

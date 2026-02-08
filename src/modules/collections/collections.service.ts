@@ -19,7 +19,6 @@ type MovieRow = {
   title: string | null;
   slug: string | null;
   overview: string | null;
-  release_date: string | null;
   quality: string | null;
   rating: string | number | null;
   runtime: number | null;
@@ -152,7 +151,6 @@ export class CollectionsService {
         m.title AS title,
         m.slug AS slug,
         m.plot AS overview,
-        m.release_date AS release_date,
         m.quality AS quality,
         m.rating_avg AS rating,
         m.duration_min AS runtime,
@@ -236,7 +234,6 @@ export class CollectionsService {
     const sortByRaw = String(filter.sort_by || 'updated_at').trim().toLowerCase();
     const sortByMap: Record<string, string> = {
       updated_at: 'm.updated_at',
-      release_date: 'm.release_date',
       year: 'm.year',
     };
     const sortColumn = sortByMap[sortByRaw] || 'm.updated_at';
