@@ -2,6 +2,7 @@
 
 ## Base URL
 - Local: `http://localhost:4000`
+- Production: `https://rophim24.xyz` (nếu cấu hình domain)
 
 ## Response Format
 - API trả JSON trực tiếp từ service/controller.
@@ -195,6 +196,30 @@ Response mẫu:
 ```
 
 ---
+
+## 3.1) Crawl Script
+
+Script: `scripts/crawl-all-current.sh`
+
+Biến môi trường (ưu tiên theo thứ tự):
+- `API_BASE_URL`
+- `BASE_URL`
+- `SITE_URL`
+- `APP_URL`
+- `NEXT_PUBLIC_API_URL`
+- Fallback: `http://localhost:${PORT:-4000}`
+
+Ví dụ:
+```bash
+API_BASE_URL=http://localhost:4000 SYNC_AFTER=1 SYNC_LIMIT=all INLINE_PROCESSING=1 ./scripts/crawl-all-current.sh kkphim 2
+```
+
+Tham số:
+- `SYNC_AFTER=1`: sync `source_items` -> `movies` sau khi crawl
+- `SYNC_LIMIT=all|number`: giới hạn số item sync
+- `INLINE_PROCESSING=1`: gọi detail inline (không enqueue)
+- `RETRY_PER_PAGE`: số lần retry mỗi page (mặc định 3)
+- `REQUEST_DELAY_SEC`: delay giữa requests (mặc định 0.03)
 
 ## 4) Collections
 

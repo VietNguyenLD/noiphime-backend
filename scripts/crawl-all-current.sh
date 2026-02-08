@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-API_BASE_URL="${API_BASE_URL:-http://localhost:4000}"
+if [[ -f ".env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source ".env"
+  set +a
+fi
+
+API_BASE_URL="${API_BASE_URL:-${BASE_URL:-${SITE_URL:-${APP_URL:-${NEXT_PUBLIC_API_URL:-http://localhost:${PORT:-4000}}}}}}"
 TARGET_SOURCE="${1:-all}"          # all | ophim | kkphim
 MAX_PAGES_OVERRIDE="${2:-}"        # optional: giới hạn page để test nhanh
 RETRY_PER_PAGE="${RETRY_PER_PAGE:-3}"
@@ -53,6 +60,7 @@ fetch_total_pages() {
 
 check_api_ready() {
   local health
+  log "Using API_BASE_URL=$API_BASE_URL"
   health="$(curl -sSf "$API_BASE_URL/health")"
   local status db
   status="$(printf '%s' "$health" | json_get "j.status ?? j.data?.status")"
