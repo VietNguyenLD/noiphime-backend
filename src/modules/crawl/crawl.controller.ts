@@ -29,4 +29,10 @@ export class CrawlController {
     }
     return this.crawlService.enqueueDetail(source, externalId);
   }
+
+  @Post('sync/:sourceItemId')
+  async sync(@Param('sourceItemId') sourceItemId: string) {
+    const id = Number(sourceItemId);
+    return this.crawlService.enqueueSync(id);
+  }
 }

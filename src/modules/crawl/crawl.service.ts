@@ -60,6 +60,18 @@ export class CrawlService implements OnModuleInit {
     return { queued: true };
   }
 
+  async enqueueSync(sourceItemId: number) {
+    if (!sourceItemId || Number.isNaN(sourceItemId)) {
+      throw new Error('Invalid sourceItemId');
+    }
+    await this.syncQueue.add(
+      'sync',
+      { sourceItemId },
+      { attempts: 3, backoff: { type: 'exponential', delay: 5000 } },
+    );
+    return { queued: true };
+  }
+
   async discover(sourceCode: string, page = 1) {
     this.assertSourceEnabled(sourceCode);
     const crawler = this.getCrawler(sourceCode);

@@ -3,7 +3,10 @@ import { Job } from 'bullmq';
 import { SyncService } from '../sync/sync.service';
 import { QUEUE_SYNC_SOURCE_ITEM } from './crawl.service';
 
-@Processor(QUEUE_SYNC_SOURCE_ITEM)
+@Processor(QUEUE_SYNC_SOURCE_ITEM, {
+  lockDuration: 300000,
+  lockRenewTime: 60000,
+})
 export class SyncProcessor extends WorkerHost {
   constructor(private readonly syncService: SyncService) {
     super();
