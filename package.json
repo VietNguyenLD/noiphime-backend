@@ -5,7 +5,6 @@
   "private": true,
   "scripts": {
     "start": "node dist/main.js",
-    "start:prod": "node dist/main.js",
     "start:dev": "nest start --watch",
     "build": "nest build",
     "seed": "ts-node src/modules/seed/seed.runner.ts",
