@@ -14,7 +14,7 @@ MAX_PAGES_OVERRIDE="${2:-}"        # optional: giới hạn page để test nhan
 RETRY_PER_PAGE="${RETRY_PER_PAGE:-3}"
 REQUEST_DELAY_SEC="${REQUEST_DELAY_SEC:-0.03}"
 SYNC_AFTER="${SYNC_AFTER:-0}"      # 1 = sync source_items -> movies after crawl
-SYNC_LIMIT="${SYNC_LIMIT:-500}"    # max source_items to sync per source (number or "all")
+SYNC_LIMIT="${SYNC_LIMIT:-all}"    # max source_items to sync per source (number or "all")
 INLINE_PROCESSING="${INLINE_PROCESSING:-0}" # 1 = call crawl endpoints inline (no queue)
 
 OPHIM_LIST_URL="${OPHIM_LIST_URL:-https://ophim1.com/danh-sach/phim-moi-cap-nhat?page=1}"

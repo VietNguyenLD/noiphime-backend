@@ -351,6 +351,9 @@ export class SyncService {
     const ratingAvg = this.clampRatingAvg(normalized.ratingAvg);
     const ratingCount = this.clampInt(normalized.ratingCount);
     const viewCount = this.clampBigInt(normalized.viewCount);
+    const tmdbId = this.clampInt(normalized.tmdbId as unknown);
+    const year = this.clampInt(normalized.year as unknown);
+    const durationMin = this.clampInt(normalized.durationMin as unknown);
 
     const rows = await queryRunner.query(
       `
@@ -385,8 +388,8 @@ export class SyncService {
         normalized.originalTitle || null,
         normalized.otherTitles ? JSON.stringify(normalized.otherTitles) : null,
         normalized.type,
-        normalized.year || null,
-        normalized.durationMin || null,
+        year,
+        durationMin,
         normalized.status || 'unknown',
         normalized.quality || null,
         normalized.subtitle || null,
@@ -395,7 +398,7 @@ export class SyncService {
         normalized.backdropUrl || null,
         normalized.trailerUrl || null,
         normalized.imdbId || null,
-        normalized.tmdbId || null,
+        tmdbId,
         viewCount ?? 0,
         ratingAvg ?? 0,
         ratingCount ?? 0,
@@ -448,15 +451,18 @@ export class SyncService {
     const ratingAvg = this.clampRatingAvg(normalized.ratingAvg);
     const ratingCount = this.clampInt(normalized.ratingCount);
     const viewCount = this.clampBigInt(normalized.viewCount);
+    const tmdbId = this.clampInt(normalized.tmdbId as unknown);
+    const year = this.clampInt(normalized.year as unknown);
+    const durationMin = this.clampInt(normalized.durationMin as unknown);
 
     const fields: Array<{ column: string; value: any }> = [
       { column: 'title', value: normalized.title },
       { column: 'original_title', value: normalized.originalTitle },
       { column: 'other_titles', value: normalized.otherTitles },
       { column: 'type', value: normalized.type },
-      { column: 'year', value: normalized.year },
+      { column: 'year', value: year },
       { column: 'status', value: normalized.status },
-      { column: 'duration_min', value: normalized.durationMin },
+      { column: 'duration_min', value: durationMin },
       { column: 'quality', value: normalized.quality },
       { column: 'subtitle', value: normalized.subtitle },
       { column: 'plot', value: normalized.plot },
@@ -464,7 +470,7 @@ export class SyncService {
       { column: 'backdrop_url', value: normalized.backdropUrl },
       { column: 'trailer_url', value: normalized.trailerUrl },
       { column: 'imdb_id', value: normalized.imdbId },
-      { column: 'tmdb_id', value: normalized.tmdbId },
+      { column: 'tmdb_id', value: tmdbId },
       { column: 'view_count', value: viewCount },
       { column: 'rating_avg', value: ratingAvg },
       { column: 'rating_count', value: ratingCount },
@@ -555,7 +561,8 @@ export class SyncService {
   private async upsertCountries(queryRunner: QueryRunner, items: TaxonomyItem[]) {
     const ids: number[] = [];
     for (const item of items) {
-      const code = item.code ? String(item.code).slice(0, 16) : null;
+      const rawCode = item.code ? String(item.code).trim() : '';
+      const code = rawCode ? rawCode.slice(0, 16) : null;
       if (code) {
         const rows = await queryRunner.query(
           `
@@ -918,7 +925,7 @@ export class SyncService {
     }
   }
 
-  private clampRatingAvg(value: number | null | undefined): number | null {
+  private clampRatingAvg(value: unknown): number | null {
     if (value === null || value === undefined) return null;
     const num = Number(value);
     if (!Number.isFinite(num)) return null;
@@ -926,7 +933,7 @@ export class SyncService {
     return Math.round(clamped * 100) / 100;
   }
 
-  private clampInt(value: number | null | undefined): number | null {
+  private clampInt(value: unknown): number | null {
     if (value === null || value === undefined) return null;
     const num = Number(value);
     if (!Number.isFinite(num)) return null;
@@ -934,7 +941,7 @@ export class SyncService {
     return clamped;
   }
 
-  private clampBigInt(value: number | null | undefined): number | null {
+  private clampBigInt(value: unknown): number | null {
     if (value === null || value === undefined) return null;
     const num = Number(value);
     if (!Number.isFinite(num)) return null;

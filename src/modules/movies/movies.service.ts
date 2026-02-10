@@ -184,6 +184,7 @@ export class MoviesService {
 
     return {
       ...movie,
+      trailerUrl: movie.trailer_url ?? null,
       profile_sizes: {
         h632: 'https://image.tmdb.org/t/p/h632',
         original: 'https://image.tmdb.org/t/p/original',
