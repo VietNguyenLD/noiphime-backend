@@ -161,3 +161,4 @@ Theo dõi worker:
 ```bash
 docker compose logs -f api
 ```
+docker compose -f docker-compose.prod.yml up -d --build
