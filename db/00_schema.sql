@@ -358,6 +358,37 @@ CREATE TABLE collections (
 );
 
 CREATE INDEX idx_collections_published ON collections(is_published);
+
+/* ============================================================================
+   11. SLIDERS
+============================================================================ */
+
+CREATE TABLE sliders (
+  id BIGSERIAL PRIMARY KEY,
+  code VARCHAR(100) NOT NULL UNIQUE,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE slider_items (
+  id BIGSERIAL PRIMARY KEY,
+  slider_id BIGINT REFERENCES sliders(id) ON DELETE CASCADE,
+  movie_id BIGINT REFERENCES movies(id) ON DELETE CASCADE,
+  order_index INT NOT NULL DEFAULT 0,
+  image_url TEXT,
+  headline TEXT,
+  subhead TEXT,
+  cta_text TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(slider_id, movie_id)
+);
+
+CREATE INDEX idx_slider_items_slider ON slider_items(slider_id, order_index);
 CREATE INDEX idx_collections_order ON collections("order");
 
 

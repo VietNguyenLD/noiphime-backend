@@ -622,8 +622,14 @@ export class SyncService {
     ];
 
     for (const roleBlock of roles) {
+      const seen = new Set<string>();
       for (const person of roleBlock.people) {
-        const personId = await this.upsertPerson(queryRunner, person);
+        const name = String(person?.name || '').trim();
+        if (!name) continue;
+        const slug = String(person?.slug || '').trim() || slugify(name);
+        if (!slug || seen.has(slug)) continue;
+        seen.add(slug);
+        const personId = await this.upsertPerson(queryRunner, { ...person, name, slug });
         await queryRunner.query(
           `
           INSERT INTO movie_people (movie_id, person_id, role_type, character_name, order_index)
